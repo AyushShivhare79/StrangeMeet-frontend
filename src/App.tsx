@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Sender from "./components/Sender";
-import Receiver from "./components/Receiver";
+import { Sender } from "./components/Sender";
+import { Receiver } from "./components/Receiver";
 
 import "./App.css";
 
