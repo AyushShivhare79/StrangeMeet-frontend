@@ -16,12 +16,11 @@ export const Receiver = () => {
   }, []);
 
   function startReceiving(socket: WebSocket) {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
+    const pc = new RTCPeerConnection();
     pc.ontrack = (event) => {
       if (ref.current) {
         ref.current.srcObject = new MediaStream([event.track]);
+        ref.current.play();
       }
     };
 
@@ -75,7 +74,10 @@ export const Receiver = () => {
         <h1>Remote</h1>
         <video autoPlay ref={ref}></video>
       </div>
-      <div></div>
+      <div>
+        <h1>Local</h1>
+        <video autoPlay ref={ref}></video>
+      </div>
     </>
   );
 };

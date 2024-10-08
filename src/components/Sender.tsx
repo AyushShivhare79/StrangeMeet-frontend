@@ -26,16 +26,16 @@ export const Sender = () => {
 
     socket.onmessage = async (event) => {
       const message = JSON.parse(event.data);
+      console.log("message: ", message);
       if (message.type === "createAnswer") {
         await pc.setRemoteDescription(message.sdp);
       } else if (message.type === "iceCandidate") {
+        console.log("ICE:", message.candidate);
         pc.addIceCandidate(message.candidate);
       }
     };
 
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-    });
+    const pc = new RTCPeerConnection();
     setPC(pc);
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -74,16 +74,17 @@ export const Sender = () => {
         pc?.addTrack(track);
       });
     });
+
     pc.ontrack = (event) => {
       if (videoRef.current) {
         videoRef.current.srcObject = new MediaStream([event.track]);
+        videoRef.current.play();
       }
     };
   };
 
   return (
     <div>
-      Sender
       <button onClick={initiateConn}> Send data </button>
       <div>
         <h1>Remote</h1>
