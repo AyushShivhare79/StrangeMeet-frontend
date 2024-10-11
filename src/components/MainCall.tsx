@@ -11,7 +11,7 @@ export default function Test() {
   const remoteRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8080");
+    const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_PORT);
     setSocket(socket);
 
     socket.onmessage = (event) => {
