@@ -7,13 +7,6 @@ import Test from "./components/Test";
 function App() {
   return (
     <>
-      {/* <BrowserRouter>
-        <Routes>
-          <Route path="/sender" element={<Sender />} />
-          <Route path="/receiver" element={<Receiver />} />
-        </Routes>
-      </BrowserRouter> */}
-
       <BrowserRouter>
         <Routes>
           <Route path="/test" element={<Test />} />

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import Chat from "./Chat";
 
 export default function Test() {
   const [socket, setSocket] = useState<WebSocket | null>();
@@ -83,19 +84,19 @@ export default function Test() {
 
     const getCameraStreamAndSend = (pc: RTCPeerConnection) => {
       pc.ontrack = (event) => {
-        if (localRef.current) {
-          localRef.current.srcObject = new MediaStream([event.track]);
-          localRef.current.play();
+        if (remoteRef.current) {
+          remoteRef.current.srcObject = new MediaStream([event.track]);
+          remoteRef.current.play();
         }
       };
 
       navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
         // const video = document.createElement("video");
         //
-        // if (localRef.current) {
-        //   localRef.current.srcObject = stream;
-        //   localRef.current.play();
-        // }
+        if (localRef.current) {
+          localRef.current.srcObject = stream;
+          localRef.current.play();
+        }
         //
 
         // video.play();
@@ -117,10 +118,10 @@ export default function Test() {
       }
     };
     navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      // if (localRef.current) {
-      //   localRef.current.srcObject = stream;
-      //   localRef.current.play();
-      // }
+      if (localRef.current) {
+        localRef.current.srcObject = stream;
+        localRef.current.play();
+      }
       stream.getTracks().forEach((track) => {
         pc?.addTrack(track);
       });
@@ -136,11 +137,27 @@ export default function Test() {
 
   return (
     <>
-      <div>
-        <h2>Remote</h2>
-        <video autoPlay ref={remoteRef}></video>
-        <h1>Local</h1>
-        <video autoPlay ref={localRef}></video>
+      <div className="p-5 grid grid-cols-3 h-screen">
+        <div className="rounded-xl h-full w-full flex flex-col items-center gap-5 ">
+          {/* Container */}
+          <div className="flex justify-center items-center min-h-[40%]  min-w-[95%] max-w-[30%]">
+            <video
+              className="rounded-xl object-cover min-h-[40%] min-w-[95%] max-w-[30%]"
+              autoPlay
+              ref={remoteRef}
+            ></video>
+          </div>
+          <div className="flex justify-center items-center min-h-[40%]  min-w-[95%] max-w-[30%]">
+            <video
+              className="rounded-xl object-cover min-h-[40%] min-w-[95%] max-w-[30%]"
+              autoPlay
+              ref={localRef}
+            ></video>
+          </div>
+        </div>
+        <div className="col-span-2 ">
+          <Chat />
+        </div>
       </div>
     </>
   );
