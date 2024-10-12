@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import Chat from "./Chat";
+import { storeData } from "../lib/storeData";
+// import { useNavigate } from "react-router-dom";
 
-export default function Test() {
+export default function MainCall() {
   const [socket, setSocket] = useState<WebSocket | null>();
   const [pc, setPc] = useState<RTCPeerConnection>();
 
@@ -16,9 +18,9 @@ export default function Test() {
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      console.log("Test: ", message);
       setUser(message.user);
     };
+    console.log("User: ", user);
     const pc = new RTCPeerConnection();
     setPc(pc);
   }, []);
@@ -29,60 +31,33 @@ export default function Test() {
 
   socket.onmessage = async (event) => {
     const message = JSON.parse(event.data);
-    // setUser(message.user);
-
-    //This is for setting the peer connection
-
-    console.log("message: ", message);
-    if (message.type === "createAnswer") {
-      pc.setRemoteDescription(message.sdp);
-    } else if (message.type === "createOffer") {
-      console.log("Accept offer!");
-      pc.setRemoteDescription(message.sdp).then(() => {
-        console.log("Create Answer!");
-        pc.createAnswer().then((answer) => {
-          pc.setLocalDescription(answer);
-          console.log("Finally send");
-          socket.send(
-            JSON.stringify({
-              type: "createAnswer",
-              sdp: answer,
-            })
-          );
-          console.log("PC: ", pc);
-        });
-      });
-    } else if (message.type === "iceCandidate") {
-      pc.addIceCandidate(message.candidate);
-      console.log("Added: ", pc);
-    }
+    storeData({ message, pc, socket });
   };
 
-  if (user === "user1") {
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
+  switch (user) {
+    case "user1":
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket?.send(
+            JSON.stringify({
+              type: "iceCandidate",
+              candidate: event.candidate,
+            })
+          );
+        }
+      };
+
+      pc.onnegotiationneeded = async () => {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
         socket?.send(
           JSON.stringify({
-            type: "iceCandidate",
-            candidate: event.candidate,
+            type: "createOffer",
+            sdp: pc.localDescription,
           })
         );
-      }
-    };
-
-    pc.onnegotiationneeded = async () => {
-      console.log("NegotiationSend");
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socket?.send(
-        JSON.stringify({
-          type: "createOffer",
-          sdp: pc.localDescription,
-        })
-      );
-    };
-
-    const getCameraStreamAndSend = (pc: RTCPeerConnection) => {
+      };
+      
       pc.ontrack = (event) => {
         if (remoteRef.current) {
           remoteRef.current.srcObject = new MediaStream([event.track]);
@@ -91,49 +66,76 @@ export default function Test() {
       };
 
       navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-        // const video = document.createElement("video");
-        //
         if (localRef.current) {
           localRef.current.srcObject = stream;
           localRef.current.play();
         }
-        //
-
-        // video.play();
-
-        // this is wrong, should propogate via a component
-
-        // document.body.appendChild(video);
         stream.getTracks().forEach((track) => {
           pc?.addTrack(track);
         });
       });
-    };
-    getCameraStreamAndSend(pc);
-  } else if (user === "user2") {
-    pc.ontrack = (event) => {
-      if (remoteRef.current) {
-        remoteRef.current.srcObject = new MediaStream([event.track]);
-        remoteRef.current.play();
-      }
-    };
-    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      if (localRef.current) {
-        localRef.current.srcObject = stream;
-        localRef.current.play();
-      }
-      stream.getTracks().forEach((track) => {
-        pc?.addTrack(track);
-      });
-    });
+      break;
 
-    // const video = document.createElement("video");
-    // document.body.appendChild(video);
-    // pc.ontrack = (event) => {
-    //   video.srcObject = new MediaStream([event.track]);
-    //   video.play();
-    // };
+    case "user2":
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket?.send(
+            JSON.stringify({
+              type: "iceCandidate",
+              candidate: event.candidate,
+            })
+          );
+        }
+      };
+      pc.ontrack = (event) => {
+        if (remoteRef.current) {
+          remoteRef.current.srcObject = new MediaStream([event.track]);
+          remoteRef.current.play();
+        }
+      };
+      navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+        if (localRef.current) {
+          localRef.current.srcObject = stream;
+          localRef.current.play();
+        }
+        stream.getTracks().forEach((track) => {
+          pc?.addTrack(track);
+        });
+      });
+
+      break;
   }
+  //Test
+
+  // pc.addEventListener(
+  //   "connectionstatechange",
+  //   (event) => {
+  //     switch (pc.connectionState) {
+  //       case "new":
+  //       case "connecting":
+  //         setOnlineStatus("Connecting…");
+  //         break;
+  //       case "connected":
+  //         setOnlineStatus("Online");
+  //         break;
+  //       case "disconnected":
+  //         setOnlineStatus("Disconnecting…");
+  //         break;
+  //       case "closed":
+  //         setOnlineStatus("Offline");
+  //         break;
+  //       case "failed":
+  //         setOnlineStatus("Error");
+  //         break;
+  //       default:
+  //         setOnlineStatus("Unknown");
+  //         break;
+  //     }
+  //   },
+  //   false
+  // );
+
+  //Test
 
   return (
     <>

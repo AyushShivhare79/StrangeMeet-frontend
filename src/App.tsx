@@ -7,7 +7,7 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/test" element={<MainCall />} />
+          <Route path="/online" element={<MainCall />} />
         </Routes>
       </BrowserRouter>
     </>
