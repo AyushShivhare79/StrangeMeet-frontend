@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import Chat from "./Chat";
 import { storeData } from "../lib/storeData";
-// import { useNavigate } from "react-router-dom";
+import { Track } from "../lib/track";
+import { sendIceCandidate } from "../lib/sendIceCandidate";
+import { sendNegotiation } from "../lib/sendNegotiation";
 
 export default function MainCall() {
   const [socket, setSocket] = useState<WebSocket | null>();
@@ -20,7 +22,6 @@ export default function MainCall() {
       const message = JSON.parse(event.data);
       setUser(message.user);
     };
-    console.log("User: ", user);
     const pc = new RTCPeerConnection();
     setPc(pc);
   }, []);
@@ -28,84 +29,9 @@ export default function MainCall() {
   if (!socket || !pc || !user) {
     return;
   }
+  console.log("User: ", user);
 
-  socket.onmessage = async (event) => {
-    const message = JSON.parse(event.data);
-    storeData({ message, pc, socket });
-  };
-
-  switch (user) {
-    case "user1":
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket?.send(
-            JSON.stringify({
-              type: "iceCandidate",
-              candidate: event.candidate,
-            })
-          );
-        }
-      };
-
-      pc.onnegotiationneeded = async () => {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket?.send(
-          JSON.stringify({
-            type: "createOffer",
-            sdp: pc.localDescription,
-          })
-        );
-      };
-      
-      pc.ontrack = (event) => {
-        if (remoteRef.current) {
-          remoteRef.current.srcObject = new MediaStream([event.track]);
-          remoteRef.current.play();
-        }
-      };
-
-      navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-        if (localRef.current) {
-          localRef.current.srcObject = stream;
-          localRef.current.play();
-        }
-        stream.getTracks().forEach((track) => {
-          pc?.addTrack(track);
-        });
-      });
-      break;
-
-    case "user2":
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket?.send(
-            JSON.stringify({
-              type: "iceCandidate",
-              candidate: event.candidate,
-            })
-          );
-        }
-      };
-      pc.ontrack = (event) => {
-        if (remoteRef.current) {
-          remoteRef.current.srcObject = new MediaStream([event.track]);
-          remoteRef.current.play();
-        }
-      };
-      navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-        if (localRef.current) {
-          localRef.current.srcObject = stream;
-          localRef.current.play();
-        }
-        stream.getTracks().forEach((track) => {
-          pc?.addTrack(track);
-        });
-      });
-
-      break;
-  }
-  //Test
+  //states
 
   // pc.addEventListener(
   //   "connectionstatechange",
@@ -113,16 +39,16 @@ export default function MainCall() {
   //     switch (pc.connectionState) {
   //       case "new":
   //       case "connecting":
-  //         setOnlineStatus("Connecting…");
+  //         setOnlineStatus("Connecting");
   //         break;
   //       case "connected":
-  //         setOnlineStatus("Online");
+  //         setOnlineStatus("connected");
   //         break;
   //       case "disconnected":
-  //         setOnlineStatus("Disconnecting…");
+  //         setOnlineStatus("disconnected");
   //         break;
   //       case "closed":
-  //         setOnlineStatus("Offline");
+  //         setOnlineStatus("closed");
   //         break;
   //       case "failed":
   //         setOnlineStatus("Error");
@@ -135,7 +61,28 @@ export default function MainCall() {
   //   false
   // );
 
-  //Test
+  socket.onmessage = async (event) => {
+    const message = JSON.parse(event.data);
+    storeData({ message, pc, socket });
+  };
+
+  switch (user) {
+    case "user1":
+      sendIceCandidate({ pc, socket });
+
+      sendNegotiation({ pc, socket });
+      // Use forward ref concept
+      Track({ pc, remoteRef, localRef });
+
+      break;
+
+    case "user2":
+      sendIceCandidate({ pc, socket });
+
+      Track({ pc, remoteRef, localRef });
+
+      break;
+  }
 
   return (
     <>
