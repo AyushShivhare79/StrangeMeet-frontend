@@ -2,10 +2,12 @@ interface trackType {
   pc: RTCPeerConnection;
   remoteRef: React.RefObject<HTMLVideoElement>;
   localRef: React.RefObject<HTMLVideoElement>;
+  //   user: string | undefined;
 }
 
 export const Track = ({ pc, remoteRef, localRef }: trackType) => {
-    console.log("ReachHERE");
+  console.log("ReachHERE");
+
   pc.ontrack = (event) => {
     if (remoteRef.current) {
       remoteRef.current.srcObject = new MediaStream([event.track]);

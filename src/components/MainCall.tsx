@@ -18,18 +18,20 @@ export default function MainCall() {
     const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_PORT);
     setSocket(socket);
 
-    socket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setUser(message.user);
-    };
+    // socket.onmessage = (event) => {
+    //   const message = JSON.parse(event.data);
+    //     setUser(message.user);
+    // };
+    // console.log("User: ", user);
+
     const pc = new RTCPeerConnection();
     setPc(pc);
   }, []);
 
-  if (!socket || !pc || !user) {
+  console.log(`Socket: ${socket}, Pc: ${pc}, User: ${user}`);
+  if (!socket || !pc) {
     return;
   }
-  console.log("User: ", user);
 
   //states
 
@@ -63,6 +65,11 @@ export default function MainCall() {
 
   socket.onmessage = async (event) => {
     const message = JSON.parse(event.data);
+    if (!user) {
+      setUser(message.user);
+    }
+    console.log("User: ", user);
+
     storeData({ message, pc, socket });
   };
 
@@ -83,6 +90,7 @@ export default function MainCall() {
 
       break;
   }
+  // Track({ pc, remoteRef, localRef, user });
 
   return (
     <>
