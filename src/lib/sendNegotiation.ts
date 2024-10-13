@@ -5,9 +5,11 @@ interface negotiationType {
 
 export const sendNegotiation = ({ pc, socket }: negotiationType) => {
   pc.onnegotiationneeded = async () => {
+    console.log("negotiation send")
+
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    socket?.send(
+    await socket?.send(
       JSON.stringify({
         type: "createOffer",
         sdp: pc.localDescription,

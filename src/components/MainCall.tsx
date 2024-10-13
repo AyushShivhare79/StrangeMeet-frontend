@@ -4,6 +4,7 @@ import { storeData } from "../lib/storeData";
 import { Track } from "../lib/track";
 import { sendIceCandidate } from "../lib/sendIceCandidate";
 import { sendNegotiation } from "../lib/sendNegotiation";
+import { useNavigate } from "react-router-dom";
 
 export default function MainCall() {
   const [socket, setSocket] = useState<WebSocket | null>();
@@ -14,57 +15,29 @@ export default function MainCall() {
   const localRef = useRef<HTMLVideoElement>(null);
   const remoteRef = useRef<HTMLVideoElement>(null);
 
+  const navigate = useNavigate();
   useEffect(() => {
     const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_PORT);
     setSocket(socket);
-
-    // socket.onmessage = (event) => {
-    //   const message = JSON.parse(event.data);
-    //     setUser(message.user);
-    // };
-    // console.log("User: ", user);
-
     const pc = new RTCPeerConnection();
     setPc(pc);
   }, []);
 
-  console.log(`Socket: ${socket}, Pc: ${pc}, User: ${user}`);
+  console.log("SOCKET: ", socket, "PC: ", pc);
+
   if (!socket || !pc) {
     return;
   }
 
-  //states
-
-  // pc.addEventListener(
-  //   "connectionstatechange",
-  //   (event) => {
-  //     switch (pc.connectionState) {
-  //       case "new":
-  //       case "connecting":
-  //         setOnlineStatus("Connecting");
-  //         break;
-  //       case "connected":
-  //         setOnlineStatus("connected");
-  //         break;
-  //       case "disconnected":
-  //         setOnlineStatus("disconnected");
-  //         break;
-  //       case "closed":
-  //         setOnlineStatus("closed");
-  //         break;
-  //       case "failed":
-  //         setOnlineStatus("Error");
-  //         break;
-  //       default:
-  //         setOnlineStatus("Unknown");
-  //         break;
-  //     }
-  //   },
-  //   false
-  // );
-
   socket.onmessage = async (event) => {
     const message = JSON.parse(event.data);
+    console.log("HERE", message);
+
+    if (message.message === "Other user disconnect") {
+      navigate(0);
+
+      return pc.close();
+    }
     if (!user) {
       setUser(message.user);
     }
@@ -73,11 +46,14 @@ export default function MainCall() {
     storeData({ message, pc, socket });
   };
 
+  socket.onclose;
+
   switch (user) {
     case "user1":
       sendIceCandidate({ pc, socket });
 
       sendNegotiation({ pc, socket });
+
       // Use forward ref concept
       Track({ pc, remoteRef, localRef });
 
@@ -90,7 +66,6 @@ export default function MainCall() {
 
       break;
   }
-  // Track({ pc, remoteRef, localRef, user });
 
   return (
     <>

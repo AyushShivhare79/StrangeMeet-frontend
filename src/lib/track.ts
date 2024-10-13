@@ -6,14 +6,8 @@ interface trackType {
 }
 
 export const Track = ({ pc, remoteRef, localRef }: trackType) => {
-  console.log("ReachHERE");
+  console.log("Camera get");
 
-  pc.ontrack = (event) => {
-    if (remoteRef.current) {
-      remoteRef.current.srcObject = new MediaStream([event.track]);
-      remoteRef.current.play();
-    }
-  };
 
   navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
     if (localRef.current) {
@@ -24,4 +18,21 @@ export const Track = ({ pc, remoteRef, localRef }: trackType) => {
       pc?.addTrack(track);
     });
   });
+
+  pc.ontrack = (event) => {
+    if (remoteRef.current) {
+      remoteRef.current.srcObject = new MediaStream([event.track]);
+      remoteRef.current.play();
+    }
+  };
+
+  // navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+  //   if (localRef.current) {
+  //     localRef.current.srcObject = stream;
+  //     localRef.current.play();
+  //   }
+  //   stream.getTracks().forEach((track) => {
+  //     pc?.addTrack(track);
+  //   });
+  // });
 };

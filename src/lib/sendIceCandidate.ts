@@ -6,6 +6,7 @@ export const sendIceCandidate = ({
   socket: WebSocket;
 }) => {
   pc.onicecandidate = (event) => {
+    console.log("iceCandidates Send")
     if (event.candidate) {
       socket?.send(
         JSON.stringify({
