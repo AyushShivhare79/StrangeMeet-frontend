@@ -1,33 +1,50 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Chat from "./Chat";
 import { storeData } from "../lib/storeData";
 import { Track } from "../lib/track";
 import { sendIceCandidate } from "../lib/sendIceCandidate";
 import { sendNegotiation } from "../lib/sendNegotiation";
 import { useNavigate } from "react-router-dom";
+import useSocket from "@/hooks/useSocket";
 
 export default function MainCall() {
-  const [socket, setSocket] = useState<WebSocket | null>();
-  const [pc, setPc] = useState<RTCPeerConnection>();
+  const { socket, pc } = useSocket();
 
   const [user, setUser] = useState<string>();
 
-  const localRef = useRef<HTMLVideoElement>(null);
+  let track: MediaStreamTrack[];
+
+  let localRef = useRef<HTMLVideoElement>(null);
   const remoteRef = useRef<HTMLVideoElement>(null);
 
   const navigate = useNavigate();
-  useEffect(() => {
-    const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_PORT);
-    setSocket(socket);
-    const pc = new RTCPeerConnection();
-    setPc(pc);
-  }, []);
 
-  console.log("SOCKET: ", socket, "PC: ", pc);
+  window.addEventListener("popstate", (event) => {
+    console.log("Closed socket");
+
+    // Do something better for close the ws
+    socket?.send(JSON.stringify({ type: "close" }));
+    pc?.close();
+
+    if (track) {
+      track[0].stop();
+    }
+    return;
+  });
 
   if (!socket || !pc) {
     return;
   }
+
+  // Show user it's camera
+
+  navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+    if (localRef.current) {
+      localRef.current.srcObject = stream;
+      localRef.current.play();
+    }
+    track = stream.getTracks();
+  });
 
   socket.onmessage = async (event) => {
     const message = JSON.parse(event.data);
@@ -35,8 +52,6 @@ export default function MainCall() {
 
     if (message.message === "Other user disconnect") {
       navigate(0);
-
-      return pc.close();
     }
     if (!user) {
       setUser(message.user);
@@ -45,8 +60,6 @@ export default function MainCall() {
 
     storeData({ message, pc, socket });
   };
-
-  socket.onclose;
 
   switch (user) {
     case "user1":
